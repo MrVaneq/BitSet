@@ -7,78 +7,59 @@ class BitSet {
     private final int intSize = Integer.SIZE; //32
 
     public BitSet(int size) {
+        size = size * intSize;
         this.size = size;
-
-        if (size % intSize == 0) {
-            array = new int[size / intSize];
-        } else {
-            array = new int[(size / intSize) + 1];
-        }
-
-        for (int i = 0; i < size / intSize; i++) {
-            array[i] = 0;
-        }
+        array = new int[size / intSize];
     }
 
     public void add(int element) {
-        if (element <= size) {
-            int num = element % intSize;
-            int intNum = 1;
-            if (element % intSize != 0) {
-                element = element / (intSize + 1);
-                intNum = intNum << (intSize - num);
-            } else {
-                element = (element / intSize) - 1;
-            }
-            array[element] |= intNum;
+        element = element * intSize;
+        element += intSize;
+        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
+        element = (element / intSize) - 1;
+        array[element] |= 1;
+    }
+
+    public void add(int[] elements) {
+        for (int element : elements) {
+            add(element);
         }
     }
 
     public void remove(int element) {
-        if (element <= size) {
-            int num = element % intSize;
-            int intNum = Integer.MAX_VALUE - 1;
-            if (element % intSize != 0) {
-                element = element / intSize;
-                for (int i = 0; i < intSize - num; i++) {
-                    intNum <<= (1);
-                    intNum |= 1;
-                }
-            } else {
-                element = (element / intSize) - 1;
-            }
-            array[element] &= intNum;
+        element = element * intSize;
+        element += intSize;
+        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
+        element = (element / intSize) - 1;
+        array[element] &= Integer.MAX_VALUE - 1;
+    }
+
+    public void remove(int[] elements) {
+        for (int element : elements) {
+            remove(element);
         }
     }
 
     public BitSet union(BitSet set) {
-        BitSet unioned = new BitSet(Math.max(size, set.size));
-        int setLength = Math.min(array.length, set.array.length);
-
-        for (int i = 0; i < unioned.array.length; i++) {
-            if (i < setLength) {
-                unioned.array[i] = array[i] | set.array[i];
-            } else {
-                if (setLength == array.length) {
-                    unioned.array[i] = set.array[i];
-                } else {
-                    unioned.array[i] = array[i];
-                }
-            }
+        if (size != set.size) throw new IllegalArgumentException("Разная длина битсетов");
+        BitSet unioned = new BitSet(size / intSize);
+        for (int i = 0; i < array.length; i++) {
+            unioned.array[i] = array[i] | set.array[i];
         }
         return unioned;
     }
 
     public BitSet intersect(BitSet set) {
-        BitSet intersected = new BitSet(Math.min(size, set.size));
-        for (int i = 0; i < intersected.array.length; i++) {
+        if (size != set.size) throw new IllegalArgumentException("Разная длина битсетов");
+        BitSet intersected = new BitSet(size / intSize);
+        for (int i = 0; i < array.length; i++) {
             intersected.array[i] = array[i] & set.array[i];
         }
         return intersected;
     }
 
     public BitSet complement() {
-        BitSet complemented = new BitSet(size);
+        BitSet complemented = new BitSet(size / intSize);
         for (int i = 0; i < size / intSize; i++) {
             complemented.array[i] = ~array[i];
         }
@@ -86,6 +67,9 @@ class BitSet {
     }
 
     public boolean contains(int element) {
+        element = element * intSize;
+        element += intSize;
+        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
         int temp = array[element / (intSize + 1)];
         temp >>= (intSize - (element % intSize));
         return 1 == temp % 2;
