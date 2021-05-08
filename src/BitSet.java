@@ -2,66 +2,63 @@ import java.util.Arrays;
 
 class BitSet {
 
-    private int[] array; //elements
+    private byte[] array; //elements
     private int size;
-    private final int intSize = Integer.SIZE; //32
+    private final int byteSize = Byte.SIZE; //8
 
     public BitSet(int size) {
+        if (size <= 0) throw new IllegalArgumentException("Недопустимый размер");
         this.size = size;
-        if (size % intSize == 0) {
-            array = new int[size / intSize];
+        if (size % 8 == 0) {
+            array = new byte[size / 8];
         } else {
-            array = new int[(size / intSize) + 1];
+            array = new byte[size / 8 + 1];
         }
     }
 
-    public void add(int element) {
-        element += intSize;
-        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
-        int num = element % intSize;
-        int intNum = 1;
-        if (element % intSize != 0) {
-            element = element / (intSize + 1);
-            intNum = intNum << (intSize - num);
-        } else {
-            element = (element / intSize) - 1;
-        }
-        array[element] |= intNum;
+    public boolean add(int element) {
+        if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
+        if (contains(element)) return false;
+        int index = element / 8;
+        byte num = array[index];
+        num = (byte) (num | (1 << (8 * (index + 1) - element - 1)));
+        array[index] = num;
+        return true;
     }
 
-    public void add(int[] elements) {
+    public boolean add(int[] elements) {
         for (int element : elements) {
+            if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
+            if (contains(element)) return false;
             add(element);
         }
+        return true;
     }
 
-    public void remove(int element) {
-        element += intSize;
-        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
-        int num = element % intSize;
-        int intNum = Integer.MAX_VALUE - 1;
-        if (element % intSize != 0) {
-            element = element / intSize;
-            intNum = intNum << (intSize - num);
-            intNum = ~intNum;
-
-        } else {
-            element = (element / intSize) - 1;
-        }
-        array[element] &= intNum;
+    public boolean remove(int element) {
+        if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
+        if (!contains(element)) return false;
+        int index = element / 8;
+        byte num = array[index];
+        num = (byte) (num ^ (1 << (8 * (index + 1) - element - 1)));
+        array[index] = num;
+        return true;
     }
 
-    public void remove(int[] elements) {
+    public boolean remove(int[] elements) {
         for (int element : elements) {
+            if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
+            if (!contains(element)) return false;
             remove(element);
         }
+        return true;
     }
 
     public BitSet union(BitSet set) {
         if (size != set.size) throw new IllegalArgumentException("Разная длина битсетов");
         BitSet unioned = new BitSet(size);
         for (int i = 0; i < array.length; i++) {
-            unioned.array[i] = array[i] | set.array[i];
+            unioned.array[i] = (byte) (array[i] | set.array[i]);
         }
         return unioned;
     }
@@ -70,41 +67,57 @@ class BitSet {
         if (size != set.size) throw new IllegalArgumentException("Разная длина битсетов");
         BitSet intersected = new BitSet(size);
         for (int i = 0; i < array.length; i++) {
-            intersected.array[i] = array[i] & set.array[i];
+            intersected.array[i] = (byte) (array[i] & set.array[i]);
         }
         return intersected;
     }
 
     public BitSet complement() {
         BitSet complemented = new BitSet(size);
-        for (int i = 0; i < size / intSize; i++) {
-            complemented.array[i] = ~array[i];
+        for (int i = 0; i < array.length; i++) {
+            complemented.array[i] = (byte) ~array[i];
         }
         return complemented;
     }
 
     public boolean contains(int element) {
-        element += intSize;
-        if (element > size) throw new IllegalArgumentException("Неверный номер элемента");
-        int temp = array[element / (intSize + 1)];
-        temp >>= (intSize - (element % intSize));
-        return 1 == temp % 2;
-    }
-
-    public int[] getArray() {
-        return array;
+        if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
+        int index = element / 8;
+        byte temp = array[index];
+        return 1 == ((temp >> (8 * (index + 1) - element - 1)) & 1);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         BitSet bitset = (BitSet) o;
-        return size == bitset.size && Arrays.equals(array, bitset.array);
+        if (size != bitset.size) return false;
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] != bitset.array[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return 31 * size + Arrays.hashCode(array);
+        return size + Arrays.hashCode(array);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        for (int i = 0; i < size; i++) {
+            if (contains(i)) {
+                sb.append(i).append(", ");
+            }
+        }
+        sb.delete(sb.length() - 2, sb.length());
+        sb.append("}");
+        return sb.toString();
     }
 }
