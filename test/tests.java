@@ -111,15 +111,16 @@ class BitSetTest {
 
     @Test
     void complement() {
-        int size = 24;
+        int size = 19;
         BitSet set1 = new BitSet(size);
         BitSet set2 = new BitSet(size);
         for (int i = 0; i < size; i++) {
             if (i % 2 == 0) set1.add(i);
             else set2.add(i);
         }
-        assertEquals(set1.toString(), set2.complement().toString());
-        assertEquals(set2.toString(), set1.complement().toString());
+        assertEquals(set1, set2.complement());
+        assertEquals(set2, set1.complement());
+        assertNotEquals(set1, set2);
     }
 
     @Test

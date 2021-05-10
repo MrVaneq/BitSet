@@ -9,49 +9,49 @@ class BitSet {
     public BitSet(int size) {
         if (size <= 0) throw new IllegalArgumentException("Недопустимый размер");
         this.size = size;
-        if (size % 8 == 0) {
-            array = new byte[size / 8];
+        if (size % byteSize == 0) {
+            array = new byte[size / byteSize];
         } else {
-            array = new byte[size / 8 + 1];
+            array = new byte[size / byteSize + 1];
         }
     }
 
     public boolean add(int element) {
         if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
         if (contains(element)) return false;
-        int index = element / 8;
+        int index = element / byteSize;
         byte num = array[index];
-        num = (byte) (num | (1 << (8 * (index + 1) - element - 1)));
+        num = (byte) (num | (1 << (byteSize * (index + 1) - element - 1)));
         array[index] = num;
         return true;
     }
 
     public boolean add(int[] elements) {
+        int counter = 0;
         for (int element : elements) {
-            if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
-            if (contains(element)) return false;
+            if (!contains(element)) counter++;
             add(element);
         }
-        return true;
+        return counter == elements.length;
     }
 
     public boolean remove(int element) {
         if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
         if (!contains(element)) return false;
-        int index = element / 8;
+        int index = element / byteSize;
         byte num = array[index];
-        num = (byte) (num ^ (1 << (8 * (index + 1) - element - 1)));
+        num = (byte) (num ^ (1 << (byteSize * (index + 1) - element - 1)));
         array[index] = num;
         return true;
     }
 
     public boolean remove(int[] elements) {
+        int counter = 0;
         for (int element : elements) {
-            if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
-            if (!contains(element)) return false;
+            if (contains(element)) counter++;
             remove(element);
         }
-        return true;
+        return counter == elements.length;
     }
 
     public BitSet union(BitSet set) {
@@ -82,9 +82,9 @@ class BitSet {
 
     public boolean contains(int element) {
         if (element < 0 || element >= size) throw new IllegalArgumentException("Неверный номер элемента");
-        int index = element / 8;
+        int index = element / byteSize;
         byte temp = array[index];
-        return 1 == ((temp >> (8 * (index + 1) - element - 1)) & 1);
+        return 1 == ((temp >> (byteSize * (index + 1) - element - 1)) & 1);
     }
 
     @Override
@@ -94,10 +94,10 @@ class BitSet {
 
         BitSet bitset = (BitSet) o;
         if (size != bitset.size) return false;
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] != bitset.array[i]) {
-                return false;
-            }
+        for (int i = 0; i < size; i++) {
+            boolean logic1 = contains(i);
+            boolean logic2 = bitset.contains(i);
+            if (!logic1 && logic2 || logic1 && !logic2) return false; //если один содержит, а другой - нет
         }
         return true;
     }
