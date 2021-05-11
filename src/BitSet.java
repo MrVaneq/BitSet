@@ -9,6 +9,7 @@ class BitSet {
     public BitSet(int size) {
         if (size <= 0) throw new IllegalArgumentException("Недопустимый размер");
         this.size = size;
+
         if (size % byteSize == 0) {
             array = new byte[size / byteSize];
         } else {
@@ -27,12 +28,11 @@ class BitSet {
     }
 
     public boolean add(int[] elements) {
-        int counter = 0;
+        boolean wasModified = false;
         for (int element : elements) {
-            if (!contains(element)) counter++;
-            add(element);
+            if (add(element)) wasModified = true;
         }
-        return counter == elements.length;
+        return wasModified;
     }
 
     public boolean remove(int element) {
@@ -46,12 +46,11 @@ class BitSet {
     }
 
     public boolean remove(int[] elements) {
-        int counter = 0;
+        boolean wasModified = false;
         for (int element : elements) {
-            if (contains(element)) counter++;
-            remove(element);
+            if (remove(element)) wasModified = true;
         }
-        return counter == elements.length;
+        return wasModified;
     }
 
     public BitSet union(BitSet set) {
@@ -73,10 +72,21 @@ class BitSet {
     }
 
     public BitSet complement() {
+        /*
         BitSet complemented = new BitSet(size);
         for (int i = 0; i < array.length; i++) {
             complemented.array[i] = (byte) ~array[i];
         }
+        return complemented;
+
+         */
+
+        BitSet complemented = new BitSet(size);
+        int octetPos = size / 8;
+        for (int i = 0; i <= octetPos; i++) {
+            complemented.array[i] = (byte) (~array[i]);
+        }
+        complemented.array[octetPos] = (byte) (complemented.array[octetPos] & 127 >> 7 - size % 8);
         return complemented;
     }
 
@@ -91,20 +101,19 @@ class BitSet {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         BitSet bitset = (BitSet) o;
         if (size != bitset.size) return false;
-        for (int i = 0; i < size; i++) {
-            boolean logic1 = contains(i);
-            boolean logic2 = bitset.contains(i);
-            if (!logic1 && logic2 || logic1 && !logic2) return false; //если один содержит, а другой - нет
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] != bitset.array[i]) {
+                return false;
+            }
         }
         return true;
     }
 
     @Override
     public int hashCode() {
-        return size + Arrays.hashCode(array);
+        return 31 * size + Arrays.hashCode(array);
     }
 
     @Override
