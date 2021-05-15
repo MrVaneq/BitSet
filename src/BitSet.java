@@ -72,21 +72,16 @@ class BitSet {
     }
 
     public BitSet complement() {
-        /*
         BitSet complemented = new BitSet(size);
         for (int i = 0; i < array.length; i++) {
             complemented.array[i] = (byte) ~array[i];
         }
-        return complemented;
 
-         */
-
-        BitSet complemented = new BitSet(size);
-        int octetPos = size / 8;
-        for (int i = 0; i <= octetPos; i++) {
-            complemented.array[i] = (byte) (~array[i]);
+        if (size % 8 != 0) {
+            int octetPos = size / 8;
+            complemented.array[octetPos] = (byte) (
+                    (complemented.array[octetPos] & 0xE0) | ((array[octetPos]) & 0x1F));
         }
-        complemented.array[octetPos] = (byte) (complemented.array[octetPos] & 127 >> 7 - size % 8);
         return complemented;
     }
 
